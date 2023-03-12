@@ -78,10 +78,33 @@ namespace Bloggie.Web.Controllers
             {
                 return View(null);
             }
-            
+
+        }
 
 
-           
+        [HttpPost]
+        public IActionResult Edit(EditTagRequest editTagRequest)
+        {
+            var tag = new Tag
+            {
+                Id = editTagRequest.Id,
+                Name = editTagRequest.Name,
+                DisplayName = editTagRequest.DisplayName,
+            };
+
+            var existingTag = _bloggieDbContext.Tags.FirstOrDefault(y => y.Id == tag.Id);
+
+            if (existingTag!=null)
+            {
+                existingTag.Name = tag.Name;
+                existingTag.DisplayName = tag.DisplayName;
+
+                _bloggieDbContext.SaveChanges();
+
+                //return RedirectToAction("Edit", new {id=editTagRequest.Id});
+                return RedirectToAction("List");
+            }
+            return RedirectToAction("Edit", new { id = editTagRequest.Id });
         }
     }
 }
