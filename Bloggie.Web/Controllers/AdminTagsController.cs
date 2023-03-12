@@ -1,6 +1,7 @@
 ﻿using Bloggie.Web.Data;
 using Bloggie.Web.Models.Domain;
 using Bloggie.Web.Models.ViewModels;
+using Bloggie.Web.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,18 +9,18 @@ namespace Bloggie.Web.Controllers
 {
     public class AdminTagsController : Controller
     {
-        private readonly BloggieDbContext bloggieDbContext;
+        private readonly ITagInterface tagRepository;
 
         //Dependency Injection --> Daha öncesinde DbContext'e özgü bir class tanımladık ve program.cs içerisinde bu classı service özelliklerinden uyglamamıza tanıttık. Bunu yqpmaktaki amacımız ihtiyaç duyulan herhangi bir nesne içerisinde ihtiyaç duyduğumuz bu nesneyi çağırabilmek. Ve nesnenin içerisinde yeniden bu dbcontexi oluşturmadan, mevcutta olan dbcontext üzerine erişim sağlamaktı. Yani DbConteximizi istediğimiz her classa enjekte edebiliyoruz. Bu işleme dependency injection denmektedir. Bu örnekte bunu kullanabilmek için mevcut classımızda bir constructor oluşturduk ve parametre olarak Dbcontext nesnemizden bir argüman yolladık. Bu argüman classın tamamında kullanılamayacağı için bir private field oluşturduk ve bu field ile constructordan gelen argümanı eşitleyerek classımız içerisinde field'ımız üzerinden dbcontext nesnesini kullanabiliyor hale geldik. 
 
-        public AdminTagsController(BloggieDbContext bloggieDbContext)
+        public AdminTagsController(ITagInterface tagRepository)
         {
-            this.bloggieDbContext = bloggieDbContext;
+            this.tagRepository = tagRepository;
         }
 
         //Tag ekleme get metodu
         [HttpGet]
-        public async Task <IActionResult> Add()
+        public IActionResult Add()
         {
             return View();
         }
@@ -40,8 +41,8 @@ namespace Bloggie.Web.Controllers
                 DisplayName = addTagRequest.DisplayName
             };
 
-            await bloggieDbContext.AddAsync(tag);
-            await bloggieDbContext.SaveChangesAsync();
+            await tagRepository.AddAsync(tag);
+
             return RedirectToAction("List");
         }
 
@@ -50,7 +51,7 @@ namespace Bloggie.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> List()
         {
-            var tags = await bloggieDbContext.Tags.ToListAsync();
+            var tags = await tagRepository.GetAllAsync();
             return View(tags);
         }
 
@@ -62,7 +63,7 @@ namespace Bloggie.Web.Controllers
             //var tag = bloggieDbContext.Tags.Find(id);
 
             //2.metot
-            var tag = await bloggieDbContext.Tags.FirstOrDefaultAsync(t => t.Id == id);
+            var tag = await tagRepository.GetAsync(id);
 
             if (tag != null)
             {
@@ -89,17 +90,15 @@ namespace Bloggie.Web.Controllers
                 DisplayName = editTagRequest.DisplayName
             };
 
-            var existingTag = await bloggieDbContext.Tags.FindAsync(tag.Id);
-
-            if (existingTag != null)
+            var updatedTag = await tagRepository.UpdateAsync(tag);
+            if (updatedTag != null)
             {
-                existingTag.Name = tag.Name;
-                existingTag.DisplayName = tag.DisplayName;
-
-                await bloggieDbContext.SaveChangesAsync();
-
-                //return RedirectToAction("Edit", new { id = editTagRequest.Id});
+                //olur notificationları
                 return RedirectToAction("List");
+            }
+            else
+            {
+                //hata notificationları
             }
 
             return RedirectToAction("Edit", new { id = editTagRequest.Id });
@@ -109,16 +108,16 @@ namespace Bloggie.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(EditTagRequest editTagRequest)
         {
-            var tag = await bloggieDbContext.Tags.FindAsync(editTagRequest.Id);
 
-            if (tag != null)
+            var deletedTag = await tagRepository.DeleteAsync(editTagRequest.Id);
+            if (deletedTag != null)
             {
-                bloggieDbContext.Remove(tag);
-                await bloggieDbContext.SaveChangesAsync();
 
+                //success notification
                 return RedirectToAction("List");
             }
 
+            //error notification
             return RedirectToAction("Edit", new { id = editTagRequest.Id });
         }
 

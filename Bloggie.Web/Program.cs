@@ -1,4 +1,5 @@
 using Bloggie.Web.Data;
+using Bloggie.Web.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,11 @@ builder.Services.AddControllersWithViews();
 //DbContext'i builder özellikleri kullanarak çaðýralým
 
 builder.Services.AddDbContext<BloggieDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("BloggieDbConnectionString")));
+
+
+//Oluþturmuþ olduðumuz tag repositoryi ve itaginterface'i artýk db contexmiþçesine kullanabilmek ve classlarýmýza enjekte edebilmek için aþaðýdaki builder servisini kullanýyoruz. Artýk controllerda tagrepositoryi kullanarak DbContex eriþimini dolaylý yoldan saðlamýþ olacaðýz.
+
+builder.Services.AddScoped<ITagInterface, TagRepository>();
 
 var app = builder.Build();
 
