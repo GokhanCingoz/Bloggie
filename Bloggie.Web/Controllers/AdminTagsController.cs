@@ -46,17 +46,42 @@ namespace Bloggie.Web.Controllers
 
             _bloggieDbContext.Tags.Add(tag);
             _bloggieDbContext.SaveChanges();
-
-            return View("Add");
+            return RedirectToAction("List");
 
         }
+
         // Tag listeleme metodu
         [HttpGet]
-
         public IActionResult List()
-        {   
+        {
             var tags = _bloggieDbContext.Tags.ToList();
             return View(tags);
+        }
+
+        //Edit Sayfasının görüntülenme(get) actionu
+        [HttpGet]
+        public IActionResult Edit(Guid id)
+        {
+            var tag = _bloggieDbContext.Tags.FirstOrDefault(x => x.Id == id);
+
+            if (tag != null)
+            {
+                var editTagReq = new EditTagRequest
+                {
+                    Id = id,
+                    Name = tag.Name,
+                    DisplayName = tag.DisplayName,
+                };
+                return View(editTagReq);
+            }
+            else
+            {
+                return View(null);
+            }
+            
+
+
+           
         }
     }
 }
