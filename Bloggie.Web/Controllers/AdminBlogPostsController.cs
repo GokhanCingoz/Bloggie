@@ -3,6 +3,7 @@ using Bloggie.Web.Models.ViewModels;
 using Bloggie.Web.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Runtime.CompilerServices;
 
 namespace Bloggie.Web.Controllers
 {
@@ -77,40 +78,80 @@ namespace Bloggie.Web.Controllers
         }
 
         [HttpGet]
+        //Edit Get Action
         public async Task<IActionResult> Edit(Guid id)
         {
-            var blogPost = await blogPostRepository.GetAsync(id);
+            var blogpost = await blogPostRepository.GetAsync(id);
             var tagsFromDomainModel = await tagRepository.GetAllAsync();
 
-            if (blogPost!=null)
+            if (blogpost != null)
             {
-
-                //domain modeldeki verilerimizi viewmodela mapliyoruz.
+                //domain modeldaki verilerimizi viewmodela mapliyoruz.
                 var model = new EditBlogPostRequest
                 {
-                    Id = blogPost.Id,
-                    PublishedDate = blogPost.PublishedDate,
-                    Visible = blogPost.Visible,
-                    Author = blogPost.Author,
-                    Content = blogPost.Content,
-                    FeaturedImageUrl = blogPost.FeaturedImageUrl,
-                    Heading = blogPost.Heading,
-                    PageTitle = blogPost.PageTitle,
-                    ShortDescription = blogPost.ShortDescription,
-                    UrlHandle = blogPost.UrlHandle,
+                    Id = blogpost.Id,
+                    PublishedDate = blogpost.PublishedDate,
+                    Visible = blogpost.Visible,
+                    PageTitle = blogpost.PageTitle,
+                    Author = blogpost.Author,
+                    Content = blogpost.Content,
+                    FeaturedImageUrl = blogpost.FeaturedImageUrl,
+                    UrlHandle = blogpost.UrlHandle,
+                    Heading = blogpost.Heading,
+                    ShortDescription = blogpost.ShortDescription,
                     Tags = tagsFromDomainModel.Select(x => new SelectListItem
                     {
                         Text = x.Name,
-                        Value = x.Id.ToString(),
+                        Value = x.Id.ToString()
                     }),
-                    SelectedTags = blogPost.Tags.Select(x => x.Id.ToString()).ToArray()
+                    SelectedTags = blogpost.Tags.Select(x => x.Id.ToString()).ToArray()
                 };
-
                 return View(model);
             }
 
-
             return View(null);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(EditBlogPostRequest editBlogPostRequest)
+        {
+            //view modeldan gelenler ile domain modeli maplayelim.
+            var blogPostDomainModel = new BlogPost
+            {
+                Id = editBlogPostRequest.Id,
+                PublishedDate = editBlogPostRequest.PublishedDate,
+                Visible = editBlogPostRequest.Visible,
+                PageTitle = editBlogPostRequest.PageTitle,
+                Author = editBlogPostRequest.Author,
+                Content = editBlogPostRequest.Content,
+                FeaturedImageUrl = editBlogPostRequest.FeaturedImageUrl,
+                UrlHandle = editBlogPostRequest.UrlHandle,
+                Heading = editBlogPostRequest.Heading,
+                ShortDescription = editBlogPostRequest.ShortDescription,
+            };
+
+            var selectedTags = new List<Tag>();
+            foreach (var selectedTag in editBlogPostRequest.SelectedTags)
+            {
+                if (Guid.TryParse(selectedTag, out var tag))
+                {
+                    var foundTag = await tagRepository.GetAsync(tag);
+                    if (foundTag != null)
+                    {
+                        selectedTags.Add(foundTag);
+                    }
+                }
+            }
+            blogPostDomainModel.Tags = selectedTags;
+
+            //Submit ediyoruz
+            var updatedBlog = await blogPostRepository.UpdateAsync(blogPostDomainModel);
+
+            if (updatedBlog != null)
+            {
+                return RedirectToAction("List");
+            }
+            return RedirectToAction("Edit");
         }
     }
 }

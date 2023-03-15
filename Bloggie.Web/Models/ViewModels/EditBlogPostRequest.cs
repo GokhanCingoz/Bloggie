@@ -15,12 +15,11 @@ namespace Bloggie.Web.Models.ViewModels
         public DateTime PublishedDate { get; set; }
         public string Author { get; set; }
         public bool Visible { get; set; }
-     
 
-        // Tagleri listeleme için
+        //Tagleri listelemek için
         public IEnumerable<SelectListItem> Tags { get; set; }
 
-        // Seçili Olan Tag İçin
+        //Seçili olan tag için
         public string[] SelectedTags { get; set; }
     }
 }

@@ -41,7 +41,25 @@ namespace Bloggie.Web.Repositories
         {
             //return await bloggieDbContext.BlogPosts.Include(x=>x.Tags).FirstOrDefaultAsync(u=>u.Id== blogPost.Id);
 
-            return blogPost;
+            var existingBlog = await bloggieDbContext.BlogPosts.Include(x => x.Tags).FirstOrDefaultAsync(u => u.Id == blogPost.Id);
+            if (existingBlog!=null)
+            {
+                existingBlog.Id = blogPost.Id;
+                existingBlog.Author = blogPost.Author;
+                existingBlog.PageTitle = blogPost.PageTitle;
+                existingBlog.Content = blogPost.Content;
+                existingBlog.ShortDescription = blogPost.ShortDescription;
+                existingBlog.FeaturedImageUrl = blogPost.FeaturedImageUrl;
+                existingBlog.UrlHandle = blogPost.UrlHandle;
+                existingBlog.Visible = blogPost.Visible;
+                existingBlog.PublishedDate = blogPost.PublishedDate;
+                existingBlog.Tags = blogPost.Tags;
+                existingBlog.Heading = blogPost.Heading;
+
+                await bloggieDbContext.SaveChangesAsync();
+                return existingBlog;
+            }
+            return null;
         }
     }
 }
